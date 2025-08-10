@@ -1,4 +1,4 @@
-package com.nicc.ReactiveTutorial;
+package com.nicc.ReactiveTutorial.TutorialUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
