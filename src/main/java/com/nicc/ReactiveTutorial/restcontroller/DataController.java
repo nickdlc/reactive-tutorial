@@ -1,11 +1,13 @@
 package com.nicc.ReactiveTutorial.restcontroller;
 
 import com.nicc.ReactiveTutorial.model.Customer;
+import com.nicc.ReactiveTutorial.model.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController()
@@ -26,12 +28,46 @@ public class DataController {
                 .log();
     }
 
+    @GetMapping("/customer/{customerId}/orders")
+    public Flux<Order> getCustomerOrdersById(@PathVariable String customerId) {
+        return fetchCustomerOrdersById(customerId)
+                .log();
+    }
+
+    @PostMapping("/order")
+    public Mono<Order> createOrder(@RequestBody Order order) {
+        return reactiveMongoTemplate.save(order)
+                .log();
+    }
+
+    @GetMapping("/order/{orderId}")
+    public Mono<Order> getOrderById(@PathVariable String orderId) {
+        return fetchOrderById(orderId)
+                .log();
+    }
+
     private Mono<Customer> fetchCustomerById(String customerId) {
         Criteria criteria = Criteria.where("id").is(customerId);
         Query query = Query.query(criteria);
 
         // find returns more than one result, so use findOne
         return reactiveMongoTemplate.findOne(query, Customer.class)
+                .log();
+    }
+
+    private Flux<Order> fetchCustomerOrdersById(String customerId) {
+        Criteria criteria = Criteria.where("customerId").is(customerId);
+        Query query = Query.query(criteria);
+
+        return reactiveMongoTemplate.find(query, Order.class)
+                .log();
+    }
+
+    private Mono<Order> fetchOrderById(String orderId) {
+        Criteria criteria = Criteria.where("id").is(orderId);
+        Query query = Query.query(criteria);
+
+        return reactiveMongoTemplate.findOne(query, Order.class)
                 .log();
     }
 }
