@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @RestController()
 @RequestMapping("/api")
 public class DataController {
@@ -43,6 +47,20 @@ public class DataController {
     @GetMapping("/order/{orderId}")
     public Mono<Order> getOrderById(@PathVariable String orderId) {
         return fetchOrderById(orderId)
+                .log();
+    }
+
+    @GetMapping("/sales/summary")
+    public Mono<Map<String, BigDecimal>> getSales() {
+        return reactiveMongoTemplate.findAll(Customer.class)
+                .flatMap(customer -> fetchCustomerOrdersById(customer.getId())
+                        .map(order -> Map.entry(
+                                customer.getName(),
+                                order.getTotal().subtract(order.getDiscount() != null ? order.getDiscount() : BigDecimal.ZERO)
+                        )))
+                .collectList()
+                .map(entries -> entries.stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, BigDecimal::add)))
                 .log();
     }
 
