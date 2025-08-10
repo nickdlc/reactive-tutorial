@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ReactiveTutorialApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ReactiveTutorialApplication.class, args);
+        SpringApplication.run(ReactiveTutorialApplication.class, args);
 	}
 
 }
