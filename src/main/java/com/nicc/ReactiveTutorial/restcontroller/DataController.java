@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,15 +22,18 @@ public class DataController {
     private ReactiveMongoTemplate reactiveMongoTemplate;
 
     @PostMapping("/customer")
-    public Mono<Customer> createCustomer(@RequestBody Customer customer) {
+    public Mono<ResponseEntity<Customer>> createCustomer(@RequestBody Customer customer) {
         return reactiveMongoTemplate.save(customer)
-                .log();
+                .log()
+                .map(savedCustomer -> ResponseEntity.status(201).body(savedCustomer));
     }
 
     @GetMapping("/customer/{customerId}")
-    public Mono<Customer> getCustomerById(@PathVariable String customerId) {
+    public Mono<ResponseEntity<Customer>> getCustomerById(@PathVariable String customerId) {
         return fetchCustomerById(customerId)
-                .log();
+                .log()
+                .map(ResponseEntity::ok)
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
     }
 
     @GetMapping("/customer/{customerId}/orders")
@@ -39,19 +43,22 @@ public class DataController {
     }
 
     @PostMapping("/order")
-    public Mono<Order> createOrder(@RequestBody Order order) {
+    public Mono<ResponseEntity<Order>> createOrder(@RequestBody Order order) {
         return reactiveMongoTemplate.save(order)
-                .log();
+                .log()
+                .map(savedOrder -> ResponseEntity.status(201).body(savedOrder));
     }
 
     @GetMapping("/order/{orderId}")
-    public Mono<Order> getOrderById(@PathVariable String orderId) {
+    public Mono<ResponseEntity<Order>> getOrderById(@PathVariable String orderId) {
         return fetchOrderById(orderId)
-                .log();
+                .log()
+                .map(ResponseEntity::ok)
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
     }
 
     @GetMapping("/sales/summary")
-    public Mono<Map<String, BigDecimal>> getSales() {
+    public Mono<ResponseEntity<Map<String, BigDecimal>>> getSales() {
         return reactiveMongoTemplate.findAll(Customer.class)
                 .flatMap(customer -> fetchCustomerOrdersById(customer.getId())
                         .map(order -> Map.entry(
@@ -61,7 +68,8 @@ public class DataController {
                 .collectList()
                 .map(entries -> entries.stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, BigDecimal::add)))
-                .log();
+                .log()
+                .map(ResponseEntity::ok);
     }
 
     private Mono<Customer> fetchCustomerById(String customerId) {
